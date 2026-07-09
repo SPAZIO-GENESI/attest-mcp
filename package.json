@@ -1,0 +1,38 @@
+{
+  "name": "attest-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Spazio Genesi's attestation service — attest, verify, and check digital works from AI agents, full privacy (files never leave the device).",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "attest-mcp": "src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "attestation",
+    "sha256",
+    "proof-of-existence"
+  ],
+  "author": "Spazio Genesi ETS",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SPAZIO-GENESI/attest-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SPAZIO-GENESI/attest-mcp/issues"
+  },
+  "homepage": "https://github.com/SPAZIO-GENESI/attest-mcp#readme",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.4.3"
+  }
+}
