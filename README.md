@@ -17,7 +17,7 @@ on your behalf without a browser.
 ## Install
 
 ```bash
-npx attest-mcp
+npx -y @spazio-genesi/attest-mcp
 ```
 
 Or add it to your MCP client's config, e.g. for Claude Code / Claude Desktop:
@@ -27,7 +27,7 @@ Or add it to your MCP client's config, e.g. for Claude Code / Claude Desktop:
   "mcpServers": {
     "attest-mcp": {
       "command": "npx",
-      "args": ["attest-mcp"]
+      "args": ["-y", "@spazio-genesi/attest-mcp"]
     }
   }
 }

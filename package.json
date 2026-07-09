@@ -1,5 +1,8 @@
 {
-  "name": "attest-mcp",
+  "name": "@spazio-genesi/attest-mcp",
+  "publishConfig": {
+    "access": "public"
+  },
   "version": "0.1.0",
   "description": "MCP server for Spazio Genesi's attestation service — attest, verify, and check digital works from AI agents, full privacy (files never leave the device).",
   "type": "module",
