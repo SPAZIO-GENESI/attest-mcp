@@ -16,11 +16,25 @@ on your behalf without a browser.
 
 ## Install
 
+**Claude Desktop** — one command, no manual JSON editing:
+
 ```bash
-npx -y @spazio-genesi/attest-mcp
+npx -y @spazio-genesi/attest-mcp-setup
 ```
 
-Or add it to your MCP client's config, e.g. for Claude Code / Claude Desktop:
+This finds your `claude_desktop_config.json` (Windows/macOS/Linux), adds the
+`attest-mcp` entry, and backs up the original file first. It refuses to touch
+anything if the existing file isn't valid JSON — it never guesses. Restart
+Claude Desktop afterwards. To remove it again: add `--uninstall`. To preview
+without writing: add `--dry-run`.
+
+**Claude Code**:
+
+```bash
+claude mcp add attest-mcp -- npx -y @spazio-genesi/attest-mcp
+```
+
+**Manual / other clients** — add this to your MCP client's config:
 
 ```json
 {
