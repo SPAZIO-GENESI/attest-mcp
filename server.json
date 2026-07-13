@@ -1,0 +1,44 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.SPAZIO-GENESI/attest-mcp",
+  "description": "Proof-of-existence attestation for digital files, exposed as MCP tools. SHA-256 fingerprint computed locally and streamed from disk (file bytes never leave the device), signed with a server-side timestamp, and anchored with a recognized RFC 3161 timestamp authority plus the Bitcoin blockchain (OpenTimestamps). Free, open source, EU-hosted, run by an Italian non-profit (Spazio Genesi ETS).",
+  "repository": {
+    "url": "https://github.com/SPAZIO-GENESI/attest-mcp",
+    "source": "github"
+  },
+  "version": "0.2.1",
+  "websiteUrl": "https://attestazione.spaziogenesi.org",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@spazio-genesi/attest-mcp",
+      "version": "0.2.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "IMGAUTH_API_KEY",
+          "description": "API key credential for the attestation service (optional — bypasses the interactive device-flow authorization).",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
+        },
+        {
+          "name": "IMGAUTH_BASE_URL",
+          "description": "Override the API base URL, e.g. for local development against a `wrangler dev` instance.",
+          "isRequired": false,
+          "isSecret": false,
+          "format": "string"
+        },
+        {
+          "name": "IMGAUTH_CERT_PAGE_BASE",
+          "description": "Override the base URL used to build permanent certificate-verification page links.",
+          "isRequired": false,
+          "isSecret": false,
+          "format": "string"
+        }
+      ]
+    }
+  ]
+}

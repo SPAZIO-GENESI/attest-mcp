@@ -14,6 +14,16 @@ can produce a signed PDF certificate plus an OpenTimestamps proof anchored in Bi
 This server exposes that service as MCP tools, so an agent can attest and verify works
 on your behalf without a browser.
 
+## Why this, not just an OpenTimestamps wrapper
+
+Several MCP servers can submit a hash to an OpenTimestamps calendar. As far as
+we know, this is the only one that hands back a **complete proof of
+existence** — a signed PDF certificate, a recognized RFC 3161 timestamp, and
+a Bitcoin anchor — for **free**, with the file's bytes never leaving the
+caller's machine. No account, no upload, no paid notarization chain. If you
+know of another MCP server with the same combination (full certificate +
+free + local hashing), we'd genuinely like to hear about it — open an issue.
+
 ## Install
 
 **Claude Desktop** — one command, no manual JSON editing:
