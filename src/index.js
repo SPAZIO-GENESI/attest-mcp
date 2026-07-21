@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { basename } from "node:path";
 import { writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
@@ -20,7 +21,17 @@ import {
   permanentUrl,
 } from "./api.js";
 
-const server = new McpServer({ name: "attest-mcp", version: "0.1.0" });
+// Single source of truth for the version: package.json (never hardcoded here).
+const { version: VERSION } = createRequire(import.meta.url)("../package.json");
+
+// Diagnostics go to stderr — stdout is the JSON-RPC channel and must stay clean.
+// The client (Claude Desktop) captures stderr in its own log, so a silent death
+// of this process leaves a trace instead of an unexplained "Server disconnected".
+function logLine(message) {
+  console.error(`[attest-mcp ${new Date().toISOString()}] ${message}`);
+}
+
+const server = new McpServer({ name: "attest-mcp", version: VERSION });
 
 function ok(obj) {
   return { content: [{ type: "text", text: JSON.stringify(obj, null, 2) }] };
@@ -250,12 +261,28 @@ server.registerTool(
   }
 );
 
+process.on("uncaughtException", (err) => {
+  logLine(`fatal: uncaught exception — ${err?.stack || err}`);
+  process.exit(1);
+});
+
+process.on("unhandledRejection", (reason) => {
+  logLine(`fatal: unhandled rejection — ${reason?.stack || reason}`);
+  process.exit(1);
+});
+
+// Fires on every way out, including the ordinary one (the client closes stdin,
+// the transport ends, the event loop empties): that line tells the difference
+// between "the parent let go" and "we crashed".
+process.on("exit", (code) => logLine(`exiting (code ${code})`));
+
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
+  logLine(`v${VERSION} ready on stdio (node ${process.version}, pid ${process.pid})`);
 }
 
 main().catch((err) => {
-  console.error("attest-mcp fatal error:", err);
+  logLine(`fatal: could not start — ${err?.stack || err}`);
   process.exit(1);
 });
