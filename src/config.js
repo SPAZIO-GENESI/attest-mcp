@@ -5,7 +5,10 @@ import { join, dirname } from "node:path";
 export const BASE_URL = process.env.IMGAUTH_BASE_URL || "https://imgauth.spaziogenesi.org";
 export const CERT_PAGE_BASE = process.env.IMGAUTH_CERT_PAGE_BASE || "https://attestazione.spaziogenesi.org";
 
-const CREDENTIALS_PATH = join(homedir(), ".config", "attest-mcp", "credentials.json");
+// Overridable so tests (and the CLI's own smoke harness) never touch a real
+// user's saved session token — same override pattern as BASE_URL above.
+const CONFIG_DIR = process.env.ATTEST_MCP_CONFIG_DIR || join(homedir(), ".config", "attest-mcp");
+const CREDENTIALS_PATH = join(CONFIG_DIR, "credentials.json");
 
 // Resolves the bearer token to send: an explicit IMGAUTH_API_KEY env var wins
 // (the "convenzione" API key case); otherwise falls back to the session token

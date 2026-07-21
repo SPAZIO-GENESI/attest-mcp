@@ -101,6 +101,15 @@ export async function verifyClaim({ hash, attestazione, hmac, titolo, autore, an
   return readJsonOrThrow(res);
 }
 
+// GET /api/cert?hash=: existence-only check, used by the CLI's `verify` command
+// to report archive status without paying the cost of buffering the whole PDF
+// into memory (cancel the body as soon as we have the status).
+export async function checkArchived(hash) {
+  const res = await fetch(`${BASE_URL}/api/cert?hash=${encodeURIComponent(hash)}`);
+  if (res.body) await res.body.cancel();
+  return res.ok;
+}
+
 // GET /api/ots?hash=: OpenTimestamps proof of anchoring in Bitcoin, if any.
 export async function checkAnchor(hash) {
   const res = await fetch(`${BASE_URL}/api/ots?hash=${encodeURIComponent(hash)}`);

@@ -3,9 +3,10 @@
 Listed on the [official MCP Registry](https://registry.modelcontextprotocol.io/) as
 `io.github.SPAZIO-GENESI/attest-mcp`.
 
-MCP server for [Spazio Genesi](https://attestazione.spaziogenesi.org)'s attestation
-service — attest, verify, and check the existence of digital works from any MCP-capable
-AI agent (Claude Code, Claude Desktop, etc.).
+MCP server **and CLI** for [Spazio Genesi](https://attestazione.spaziogenesi.org)'s
+attestation service — attest, verify, and check the existence of digital works from
+any MCP-capable AI agent (Claude Code, Claude Desktop, etc.) or straight from a
+terminal / CI pipeline.
 
 **Full privacy**: file bytes never leave your device. The fingerprint (SHA-256) is
 computed locally, streamed from disk — only the hash and optional metadata are sent.
@@ -87,6 +88,56 @@ server-side timestamp, cryptographic signature, and rate limits are unchanged.
 | `check_anchor` | Check/download the OpenTimestamps (Bitcoin) proof. |
 | `service_status` | Traffic-light status of the attestation service. |
 
+## CLI (`sg-attest`)
+
+Same package, no separate install. The CLI is a `bin` alongside the MCP server,
+sharing the same hashing/API/config code — same full privacy (streamed local
+hash, file bytes never sent), same credentials.
+
+```bash
+npx -y -p @spazio-genesi/attest-mcp sg-attest attest ./work.png
+npx -y -p @spazio-genesi/attest-mcp sg-attest verify ./work.png --hash <sha256>
+```
+
+(`-p` is required: `sg-attest` is a secondary `bin` of the package, and plain
+`npx -y @spazio-genesi/attest-mcp` runs the MCP server instead.)
+
+One advantage over the site: **no 1 GB cap**. The browser is limited by
+WebCrypto (which loads the whole file into memory); this CLI streams from
+disk on Node, so it can attest files of any size.
+
+| Command | What it does | Credential |
+|---|---|---|
+| `attest <file> [--title --author --year --note] [--pdf <out>]` | Hash locally (streamed) → attest → print fingerprint, attestation, `/c/<hash>` link; `--pdf` also mints the signed certificate | Yes |
+| `verify <file> [--hash <sha256>]` | Hash locally; with `--hash`, compares (exit 2 if different); also reports archive/anchor status | No |
+| `verify-cert --hash --attestazione --hmac [--titolo --autore --anno --note]` | Verifies a certificate's HMAC signature, no local file involved | No |
+| `cert <hash> [-o <file.pdf>]` | Recovers an already-archived certificate | No |
+| `anchor <hash> [-o <file.ots>]` | Checks/downloads the OpenTimestamps (Bitcoin) proof | No |
+| `status` | Traffic-light status of the service | No |
+| `authorize` | Device flow: prints a URL to approve, polls, saves the token | — |
+| `--version` / `--help` | Version (from `package.json`) and usage | — |
+
+Every command accepts `--json` (emits one JSON object on stdout, for scripting)
+and `--quiet` (reduces non-essential human-readable output). Errors go to
+stderr; the CLI never prints a credential (API key or session token) to
+stdout, stderr, or `--json` output — same discipline as the MCP server.
+
+**Exit codes** (a stable contract, for CI/scripting):
+
+| Code | Meaning |
+|---|---|
+| `0` | Success / positive outcome |
+| `1` | Operational error (network, auth, bad input) |
+| `2` | Negative verification outcome (hash mismatch, invalid signature) |
+
+Authentication is the same as the MCP server: `IMGAUTH_API_KEY` env var, or a
+session token saved by `sg-attest authorize` (device flow). There is no
+`--key` flag — a credential on the command line ends up in shell history; use
+the env var (or a CI secret) instead.
+
+A GitHub Action that uses this CLI to attest build artifacts in CI lives in a
+companion repo: [`attest-action`](https://github.com/SPAZIO-GENESI/attest-action).
+
 ## Configuration
 
 | Env var | Default | Purpose |
@@ -129,9 +180,14 @@ descriptions and this README are in English for an international audience.
 
 ```bash
 npm install
-npm test          # unit tests (hash vectors)
-IMGAUTH_BASE_URL=http://localhost:8787 npm start   # against a local `wrangler dev`
+npm test          # unit tests (hash vectors, CLI argument parsing)
+IMGAUTH_BASE_URL=http://localhost:8787 npm start   # MCP server against a local `wrangler dev`
+IMGAUTH_BASE_URL=http://localhost:8787 node src/cli.js status   # CLI against the same
 ```
+
+`test/cli-smoke.local.mjs` is a local-only harness (not run by `npm test`) that
+exercises every `sg-attest` command end-to-end against an isolated `wrangler dev`
+imgauth instance — see the header comment in that file for the required env vars.
 
 ## Security
 

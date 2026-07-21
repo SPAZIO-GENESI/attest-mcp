@@ -3,18 +3,19 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "0.2.2",
-  "description": "MCP server for Spazio Genesi's attestation service — attest, verify, and check digital works from AI agents, full privacy (files never leave the device).",
+  "version": "0.3.0",
+  "description": "MCP server + CLI for Spazio Genesi's attestation service — attest, verify, and check digital works, full privacy (files never leave the device).",
   "mcpName": "io.github.SPAZIO-GENESI/attest-mcp",
   "type": "module",
   "main": "src/index.js",
   "bin": {
     "attest-mcp": "src/index.js",
-    "attest-mcp-setup": "src/setup.js"
+    "attest-mcp-setup": "src/setup.js",
+    "sg-attest": "src/cli.js"
   },
   "scripts": {
     "start": "node src/index.js",
-    "test": "node --test"
+    "test": "node --test test/hash.test.js test/cli.test.js"
   },
   "keywords": [
     "mcp",
