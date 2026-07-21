@@ -1,0 +1,45 @@
+name: Publish to MCP Registry
+
+# Aggiorna la scheda di questo server sul registro ufficiale MCP leggendo
+# `server.json`. NON pubblica su npm: quello resta manuale, perche' l'account
+# npm richiede la conferma con passkey, che una macchina non puo' dare.
+# Ordine corretto di un rilascio: prima `npm publish` a mano, poi questo.
+#
+# Autenticazione via OIDC: nessun token, nessun segreto da custodire. Il
+# registro concede il namespace `io.github.<proprietario-del-repo>/*`, cioe'
+# `io.github.SPAZIO-GENESI/*`, sulla sola base di chi possiede questo
+# repository — senza passare da app OAuth (bloccate dalla policy
+# dell'organizzazione) ne' da token personali.
+
+on:
+  workflow_dispatch: # esecuzione manuale dal tab Actions
+  push:
+    tags: ["v*"] # e a ogni tag di release
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # indispensabile: senza, l'OIDC non viene emesso
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # La versione in server.json deve combaciare con quella gia' pubblicata
+      # su npm, altrimenti il registro rifiuta la scheda in fase di verifica.
+      - name: Verifica che il pacchetto npm esista
+        run: |
+          NAME=$(node -p "require('./server.json').packages[0].identifier")
+          VER=$(node -p "require('./server.json').packages[0].version")
+          echo "Attesa: $NAME@$VER"
+          npm view "$NAME@$VER" version
+
+      - name: Installa mcp-publisher
+        run: curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+
+      - name: Autenticazione al registro (OIDC)
+        run: ./mcp-publisher login github-oidc
+
+      - name: Pubblica la scheda
+        run: ./mcp-publisher publish
