@@ -1,5 +1,8 @@
 # attest-mcp
 
+Listed on the [official MCP Registry](https://registry.modelcontextprotocol.io/) as
+`io.github.SPAZIO-GENESI/attest-mcp`.
+
 MCP server for [Spazio Genesi](https://attestazione.spaziogenesi.org)'s attestation
 service — attest, verify, and check the existence of digital works from any MCP-capable
 AI agent (Claude Code, Claude Desktop, etc.).
@@ -91,6 +94,30 @@ server-side timestamp, cryptographic signature, and rate limits are unchanged.
 | `IMGAUTH_API_KEY` | — | API key credential, bypasses the device flow. |
 | `IMGAUTH_BASE_URL` | `https://imgauth.spaziogenesi.org` | Override for local development (`http://localhost:8787`). |
 | `IMGAUTH_CERT_PAGE_BASE` | `https://attestazione.spaziogenesi.org` | Override for the permanent-certificate-page base URL. |
+
+## Troubleshooting
+
+If your client reports **"Server disconnected"**, check its log first: this server
+writes diagnostics to stderr, which MCP clients capture. On Claude Desktop the log
+lives in `%APPDATA%\Claude\logs\mcp-server-attest-mcp.log` (Windows) or
+`~/Library/Logs/Claude/mcp-server-attest-mcp.log` (macOS).
+
+You should see one line per lifecycle event:
+
+```
+[attest-mcp 2026-07-21T11:14:12.948Z] v0.2.2 ready on stdio (node v22.22.2, pid 32316)
+[attest-mcp 2026-07-21T11:14:12.965Z] exiting (code 0)
+```
+
+- `exiting (code 0)` — ordinary shutdown: the client closed stdin. After a laptop
+  sleep or a client restart this is expected; just restart the client to reconnect.
+- `fatal: …` followed by `exiting (code 1)` — a real crash, with the stack trace on
+  the preceding line. Please [open an issue](https://github.com/SPAZIO-GENESI/attest-mcp/issues)
+  with it.
+- No `ready` line at all — the process never started: check that `node` is on PATH
+  and at least v18 (`node --version`).
+
+stdout carries the JSON-RPC protocol and is never used for logging.
 
 ## Known limitation
 

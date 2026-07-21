@@ -3,7 +3,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "MCP server for Spazio Genesi's attestation service — attest, verify, and check digital works from AI agents, full privacy (files never leave the device).",
   "mcpName": "io.github.SPAZIO-GENESI/attest-mcp",
   "type": "module",
