@@ -133,6 +133,13 @@ npm test          # unit tests (hash vectors)
 IMGAUTH_BASE_URL=http://localhost:8787 npm start   # against a local `wrangler dev`
 ```
 
+## Security
+
+Report vulnerabilities → [`/sicurezza/`](https://attestazione.spaziogenesi.org/sicurezza/)
+(responsible disclosure policy, safe harbor for good-faith research) — this
+repo has no `security.txt` of its own (npm package, no static assets), but
+the policy covers the whole project.
+
 ## License
 
 MIT — see [LICENSE](LICENSE). This is a client for the attestation service; the
