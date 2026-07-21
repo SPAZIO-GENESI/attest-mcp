@@ -1,3 +1,7 @@
 node_modules/
 *.pdf
 *.ots
+
+# token dell'MCP Registry publisher (versioni legacy li scrivevano nella cwd)
+.mcpregistry_*
+.mcp_publisher_token
