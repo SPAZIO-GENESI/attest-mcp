@@ -113,7 +113,10 @@ async function cmdAttest(argv) {
       "",
       "Calcola l'impronta SHA-256 del file in locale (streaming, mai inviato) e la attesta.",
       "Richiede una credenziale: IMGAUTH_API_KEY oppure 'sg-attest authorize'.",
-      "Con --pdf, scarica anche il certificato firmato nel percorso indicato.",
+      "Senza --pdf: firma solo l'impronta (hash+attestazione+HMAC), nulla viene archiviato,",
+      "nessuna pagina di verifica pubblica esiste ancora.",
+      "Con --pdf <out.pdf>: genera anche il certificato firmato e lo archivia — solo allora",
+      "la pagina /c/<hash> stampata come 'Verifica' esiste davvero.",
     ]);
     return;
   }
@@ -140,7 +143,16 @@ async function cmdAttest(argv) {
     certBytes = bytes.length;
   }
 
-  const result = { ...attestation, permanent_url: permanentUrl(sha256), certificate_saved_to: certSavedTo };
+  // Senza --pdf, /api/hash non archivia nulla: la pagina /c/<hash> non esiste
+  // finché non viene emesso un certificato. Mostrare comunque il link (come
+  // faceva questo comando prima) è un 404 travestito da successo — stessa
+  // classe di bug già corretta per attest-action in P39 (action.yml chiama
+  // sempre --pdf per lo stesso motivo).
+  const result = {
+    ...attestation,
+    permanent_url: certSavedTo ? permanentUrl(sha256) : null,
+    certificate_saved_to: certSavedTo,
+  };
 
   if (flags.json) {
     printJson(result);
@@ -151,7 +163,9 @@ async function cmdAttest(argv) {
     `Attestazione:  ${attestation.attestazione}`,
     `Emesso:        ${attestation.timestamp_leggibile || attestation.timestamp_iso}`,
     `Firma HMAC:    ${attestation.hmac}`,
-    `Verifica:      ${permanentUrl(sha256)}`,
+    certSavedTo
+      ? `Verifica:      ${permanentUrl(sha256)}`
+      : "Nota:          nessun certificato generato — l'opera non è archiviata, la pagina di verifica non esiste ancora. Ripeti con --pdf <file.pdf> per crearla.",
     certSavedTo ? `Certificato:   ${certSavedTo} (${certBytes} byte)` : null,
   ]);
 }

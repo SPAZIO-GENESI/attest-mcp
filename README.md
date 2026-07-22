@@ -108,7 +108,7 @@ disk on Node, so it can attest files of any size.
 
 | Command | What it does | Credential |
 |---|---|---|
-| `attest <file> [--title --author --year --note] [--pdf <out>]` | Hash locally (streamed) → attest → print fingerprint, attestation, `/c/<hash>` link; `--pdf` also mints the signed certificate | Yes |
+| `attest <file> [--title --author --year --note] [--pdf <out>]` | Hash locally (streamed) → attest → print fingerprint, attestation, HMAC. Nothing is archived and no `/c/<hash>` page exists without `--pdf`; only `--pdf <out>` mints the signed certificate **and** prints the verification link | Yes |
 | `verify <file> [--hash <sha256>]` | Hash locally; with `--hash`, compares (exit 2 if different); also reports archive/anchor status | No |
 | `verify-cert --hash --attestazione --hmac [--titolo --autore --anno --note]` | Verifies a certificate's HMAC signature, no local file involved | No |
 | `cert <hash> [-o <file.pdf>]` | Recovers an already-archived certificate | No |
