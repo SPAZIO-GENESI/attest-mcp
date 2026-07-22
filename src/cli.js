@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 import { basename } from "node:path";
 import { writeFile } from "node:fs/promises";
+import { realpathSync } from "node:fs";
 import { createRequire } from "node:module";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 
 import { hashFile } from "./hash.js";
 import { saveCredentials } from "./config.js";
@@ -419,7 +420,25 @@ async function main() {
 // Only auto-run when executed directly (as the `sg-attest` bin) — importing
 // this module for unit tests (parseFlags) must not trigger main() against
 // the test runner's own argv.
-if (import.meta.url === pathToFileURL(process.argv[1] || "").href) {
+//
+// ⚠️ The comparison must resolve symlinks. On Linux/macOS npm links a bin as
+// a SYMLINK in node_modules/.bin, so argv[1] is that link path while
+// import.meta.url is the real file (the ESM loader resolves symlinks): a plain
+// string compare is false and main() never runs — the bin exits 0 in total
+// silence. That shipped in 0.3.0 and broke every npx invocation off Windows.
+function invokedAsBin() {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  const self = fileURLToPath(import.meta.url);
+  if (entry === self) return true;
+  try {
+    return realpathSync(entry) === self;
+  } catch {
+    return false;
+  }
+}
+
+if (invokedAsBin()) {
   main();
 }
 

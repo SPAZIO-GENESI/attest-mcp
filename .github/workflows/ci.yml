@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm install --no-audit --no-fund
+      - run: npm test
+
+  # The test that 0.3.0 was missing. Unit tests import the modules directly,
+  # so they never exercise how npm actually *installs* a bin: on Linux/macOS
+  # npm links it as a SYMLINK, and 0.3.0's entry-point guard compared paths
+  # without resolving symlinks — every `npx sg-attest ...` exited 0 printing
+  # absolutely nothing. Asserting on the OUTPUT (not just the exit code) is
+  # the point: a silent bin passes any check that only looks at exit status.
+  packaged-bins:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Pack and install globally (npm symlinks the bins)
+        run: |
+          set -euo pipefail
+          npm install --no-audit --no-fund
+          tarball="$(npm pack --silent)"
+          npm install -g "./$tarball"
+
+      - name: sg-attest --version reports the package version
+        run: |
+          set -euo pipefail
+          expected="$(node -p "require('./package.json').version")"
+          actual="$(sg-attest --version)"
+          echo "expected=${expected} actual=${actual}"
+          test "${actual}" = "${expected}"
+
+      - name: sg-attest --help prints usage
+        run: |
+          set -euo pipefail
+          sg-attest --help | grep -q "Uso: sg-attest"
+
+      - name: sg-attest status reaches the service (read-only, no credential)
+        run: |
+          set -euo pipefail
+          sg-attest status --json | node -e "
+            let d = '';
+            process.stdin.on('data', (c) => (d += c));
+            process.stdin.on('end', () => {
+              const s = JSON.parse(d);
+              if (!s.worker) throw new Error('no worker field in status output');
+              console.log('status ok:', s.worker);
+            });
+          "
+
+      - name: attest-mcp still handshakes over stdio
+        run: |
+          set -euo pipefail
+          init='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"0"}}}'
+          list='{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'
+          printf '%s\n%s\n' "$init" "$list" | timeout 30 attest-mcp > handshake.out || true
+          cat handshake.out
+          grep -q '"serverInfo"' handshake.out
+          grep -q '"attest_file"' handshake.out
