@@ -4,11 +4,19 @@ name: Release Binaries
 # Bun supportati e li allega alla GitHub Release del tag, insieme ai checksum
 # SHA-256. Nessun segreto nuovo: usa solo il GITHUB_TOKEN automatico.
 #
+# Perche' due runner: `bun build --compile --windows-icon` (icona ufficiale
+# nell'.exe) funziona SOLO compilando su Windows — in cross-compile da Linux
+# Bun rifiuta con "Using --windows-icon is only available when compiling on
+# Windows". Quindi i 4 target Unix restano su ubuntu (come nel primo rilascio
+# funzionante, nessuna regressione) e i 2 target Windows vanno su windows-latest,
+# dove l'icona si incorpora. Un job finale unisce gli artefatti, genera i
+# checksum su tutti e sei e pubblica.
+#
 # Trigger:
 # - push di un tag v*    -> build + pubblica sulla Release del tag
 # - workflow_dispatch    -> self-test: build + carica come artefatti CI,
-#   NESSUNA Release pubblicata (per collaudare il workflow prima del primo
-#   tag reale, vedi P40-DESIGN-cli-binari-standalone.md § F3)
+#   NESSUNA Release pubblicata (per collaudare il workflow prima del tag reale,
+#   vedi P40-DESIGN-cli-binari-standalone.md § F3)
 #
 # Coesiste con publish-registry.yml (scatta anch'esso su v*): workflow
 # indipendenti sullo stesso tag, nessun conflitto.
@@ -19,11 +27,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-unix:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write # richiesto per creare/aggiornare la Release del tag
-
     steps:
       - uses: actions/checkout@v4
 
@@ -31,12 +36,8 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Compila tutti i target (scripts/build-binaries.mjs)
-        run: node scripts/build-binaries.mjs
-
-      - name: Genera i checksum SHA-256
-        working-directory: dist
-        run: sha256sum * > SHA256SUMS.txt
+      - name: Compila i 4 target Unix (linux/macos)
+        run: node scripts/build-binaries.mjs --only=bun-linux-x64,bun-linux-arm64,bun-darwin-x64,bun-darwin-arm64
 
       # La prova che conta davvero (lezione packaged-bins, P39): un binario
       # che esiste sul disco non e' la stessa cosa di un binario che funziona.
@@ -64,6 +65,80 @@ jobs:
               console.log('status ok:', s.worker);
             });
           "
+
+      - name: Carica i binari Unix come artefatto intermedio
+        uses: actions/upload-artifact@v4
+        with:
+          name: bins-unix
+          path: dist/
+          retention-days: 1
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # Su Windows --windows-icon si applica: i due .exe escono con l'icona
+      # ufficiale del servizio (assets/sg-attest.ico), scelta in build-binaries.mjs.
+      - name: Compila i 2 target Windows (con icona)
+        run: node scripts/build-binaries.mjs --only=bun-windows-x64,bun-windows-arm64
+
+      # Self-test a runtime del binario nativo del runner (windows-x64): come
+      # per il Linux sopra, provare che esegue davvero, non solo che esiste.
+      - name: Esegue davvero il binario Windows appena compilato
+        working-directory: dist
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="$(node -p "require('../package.json').version")"
+          actual="$(./sg-attest-windows-x64.exe --version)"
+          echo "expected=${expected} actual=${actual}"
+          test "${actual}" = "${expected}"
+
+          ./sg-attest-windows-x64.exe --help | grep -q "Uso: sg-attest"
+
+          ./sg-attest-windows-x64.exe status --json | node -e "
+            let d = '';
+            process.stdin.on('data', (c) => (d += c));
+            process.stdin.on('end', () => {
+              const s = JSON.parse(d);
+              if (!s.worker) throw new Error('no worker field in status output');
+              console.log('status ok:', s.worker);
+            });
+          "
+
+      - name: Carica i binari Windows come artefatto intermedio
+        uses: actions/upload-artifact@v4
+        with:
+          name: bins-windows
+          path: dist/
+          retention-days: 1
+
+  release:
+    needs: [build-unix, build-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # richiesto per creare/aggiornare la Release del tag
+    steps:
+      - name: Scarica i binari Unix
+        uses: actions/download-artifact@v4
+        with:
+          name: bins-unix
+          path: dist
+
+      - name: Scarica i binari Windows
+        uses: actions/download-artifact@v4
+        with:
+          name: bins-windows
+          path: dist
+
+      - name: Genera i checksum SHA-256 (su tutti e sei)
+        working-directory: dist
+        run: sha256sum * > SHA256SUMS.txt
 
       - name: Carica come artefatti CI (self-test via workflow_dispatch)
         if: github.event_name == 'workflow_dispatch'
