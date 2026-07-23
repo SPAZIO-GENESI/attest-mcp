@@ -2,6 +2,10 @@ node_modules/
 *.pdf
 *.ots
 
+# binari standalone compilati da scripts/build-binaries.mjs (P40): vanno
+# nelle GitHub Release, non nel repo
+dist/
+
 # token dell'MCP Registry publisher (versioni legacy li scrivevano nella cwd)
 .mcpregistry_*
 .mcp_publisher_token

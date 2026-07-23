@@ -15,7 +15,8 @@
   },
   "scripts": {
     "start": "node src/index.js",
-    "test": "node --test test/hash.test.js test/cli.test.js"
+    "test": "node --test test/hash.test.js test/cli.test.js",
+    "build:binaries": "node scripts/build-binaries.mjs"
   },
   "keywords": [
     "mcp",
