@@ -6,13 +6,13 @@
     "url": "https://github.com/SPAZIO-GENESI/attest-mcp",
     "source": "github"
   },
-  "version": "0.4.1",
+  "version": "0.4.0",
   "websiteUrl": "https://attestazione.spaziogenesi.org",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@spazio-genesi/attest-mcp",
-      "version": "0.4.1",
+      "version": "0.4.0",
       "transport": {
         "type": "stdio"
       },
