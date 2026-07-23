@@ -138,6 +138,48 @@ the env var (or a CI secret) instead.
 A GitHub Action that uses this CLI to attest build artifacts in CI lives in a
 companion repo: [`attest-action`](https://github.com/SPAZIO-GENESI/attest-action).
 
+### Standalone binaries (no Node required)
+
+For a machine or CI runner without Node.js, download a pre-compiled `sg-attest`
+executable from the [Releases page](https://github.com/SPAZIO-GENESI/attest-mcp/releases) —
+same commands, same behavior, nothing to install.
+
+| OS | Architecture | File |
+|---|---|---|
+| Linux | x64 | `sg-attest-linux-x64` |
+| Linux | arm64 | `sg-attest-linux-arm64` |
+| macOS | Intel | `sg-attest-macos-x64` |
+| macOS | Apple Silicon | `sg-attest-macos-arm64` |
+| Windows | x64 | `sg-attest-windows-x64.exe` |
+| Windows | ARM64 | `sg-attest-windows-arm64.exe` |
+
+Each release also includes `SHA256SUMS.txt`. Verify the download before running it:
+
+```bash
+sha256sum -c SHA256SUMS.txt --ignore-missing   # Linux/macOS
+```
+
+```powershell
+(Get-FileHash .\sg-attest-windows-x64.exe -Algorithm SHA256).Hash   # compare by eye to SHA256SUMS.txt
+```
+
+⚠️ The binaries are **not code-signed**: expect an "unknown publisher" warning
+from Windows SmartScreen or macOS Gatekeeper the first time you run one. The
+checksum above is the integrity guarantee in the meantime — the binary is
+built and published by [GitHub Actions](.github/workflows/release-binaries.yml)
+directly from this repo's source, nothing hand-uploaded.
+
+Usage is identical to the npm-installed CLI, just call the file directly:
+
+```bash
+chmod +x ./sg-attest-linux-x64          # Linux/macOS only
+./sg-attest-linux-x64 attest ./work.png --pdf cert.pdf
+./sg-attest-linux-x64 status
+```
+
+`npx`/`npm` remain the primary distribution channel (and what `attest-action`
+uses in CI) — the binaries are an additional channel, not a replacement.
+
 ## Configuration
 
 | Env var | Default | Purpose |
