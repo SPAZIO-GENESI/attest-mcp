@@ -1,0 +1,80 @@
+name: Release Binaries
+
+# Compila gli eseguibili standalone di `sg-attest` (P40) per tutti i target
+# Bun supportati e li allega alla GitHub Release del tag, insieme ai checksum
+# SHA-256. Nessun segreto nuovo: usa solo il GITHUB_TOKEN automatico.
+#
+# Trigger:
+# - push di un tag v*    -> build + pubblica sulla Release del tag
+# - workflow_dispatch    -> self-test: build + carica come artefatti CI,
+#   NESSUNA Release pubblicata (per collaudare il workflow prima del primo
+#   tag reale, vedi P40-DESIGN-cli-binari-standalone.md § F3)
+#
+# Coesiste con publish-registry.yml (scatta anch'esso su v*): workflow
+# indipendenti sullo stesso tag, nessun conflitto.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # richiesto per creare/aggiornare la Release del tag
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Compila tutti i target (scripts/build-binaries.mjs)
+        run: node scripts/build-binaries.mjs
+
+      - name: Genera i checksum SHA-256
+        working-directory: dist
+        run: sha256sum * > SHA256SUMS.txt
+
+      # La prova che conta davvero (lezione packaged-bins, P39): un binario
+      # che esiste sul disco non e' la stessa cosa di un binario che funziona.
+      # Eseguito qui, sul target nativo del runner (linux-x64), perche' e'
+      # l'unico dei sei compilabile-e-lanciabile sulla stessa macchina CI.
+      - name: Esegue davvero il binario Linux appena compilato
+        working-directory: dist
+        run: |
+          set -euo pipefail
+          chmod +x sg-attest-linux-x64
+
+          expected="$(node -p "require('${{ github.workspace }}/package.json').version")"
+          actual="$(./sg-attest-linux-x64 --version)"
+          echo "expected=${expected} actual=${actual}"
+          test "${actual}" = "${expected}"
+
+          ./sg-attest-linux-x64 --help | grep -q "Uso: sg-attest"
+
+          ./sg-attest-linux-x64 status --json | node -e "
+            let d = '';
+            process.stdin.on('data', (c) => (d += c));
+            process.stdin.on('end', () => {
+              const s = JSON.parse(d);
+              if (!s.worker) throw new Error('no worker field in status output');
+              console.log('status ok:', s.worker);
+            });
+          "
+
+      - name: Carica come artefatti CI (self-test via workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sg-attest-binaries
+          path: dist/
+          retention-days: 7
+
+      - name: Pubblica sulla GitHub Release del tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
