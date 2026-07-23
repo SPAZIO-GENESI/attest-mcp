@@ -22,8 +22,17 @@ import {
 } from "./api.js";
 
 // Single source of truth for the version: package.json (never hardcoded —
-// lesson from attest-mcp 0.2.2, see CLAUDE.md).
-const { version: VERSION } = createRequire(import.meta.url)("../package.json");
+// lesson from attest-mcp 0.2.2, see CLAUDE.md). A compiled Bun binary has no
+// "../package.json" on disk next to it, so `--define` injects the version at
+// compile time (see scripts/build-binaries.mjs, P40 F2); the npm bin path is
+// untouched and keeps reading package.json directly.
+const VERSION = (() => {
+  try {
+    return createRequire(import.meta.url)("../package.json").version;
+  } catch {
+    return typeof __SG_ATTEST_VERSION__ !== "undefined" ? __SG_ATTEST_VERSION__ : "0.0.0";
+  }
+})();
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -440,7 +449,14 @@ async function main() {
 // import.meta.url is the real file (the ESM loader resolves symlinks): a plain
 // string compare is false and main() never runs — the bin exits 0 in total
 // silence. That shipped in 0.3.0 and broke every npx invocation off Windows.
+//
+// A Bun-compiled binary has no real file behind import.meta.url, so the
+// symlink-resolving compare below can't apply — `import.meta.main` is Bun's
+// (and modern Node's) direct answer to "is this the entry module", true for
+// the compiled binary and for `bun run`, `undefined` on older Node (falls
+// through to the symlink logic for the npm bin, unaffected).
 function invokedAsBin() {
+  if (import.meta.main) return true;
   const entry = process.argv[1];
   if (!entry) return false;
   const self = fileURLToPath(import.meta.url);
