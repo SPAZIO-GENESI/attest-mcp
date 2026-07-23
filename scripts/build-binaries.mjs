@@ -44,20 +44,23 @@ for (const { name, target } of selected) {
   const outfile = path.join(distDir, name);
   process.stdout.write(`> ${name} (${target})... `);
   try {
-    execFileSync(
-      "bun",
-      [
-        "build",
-        path.join(root, "src", "cli.js"),
-        "--compile",
-        `--target=${target}`,
-        "--define",
-        `__SG_ATTEST_VERSION__="${VERSION}"`,
-        "--outfile",
-        outfile,
-      ],
-      { cwd: root, stdio: ["ignore", "pipe", "pipe"] }
-    );
+    const args = [
+      "build",
+      path.join(root, "src", "cli.js"),
+      "--compile",
+      `--target=${target}`,
+      "--define",
+      `__SG_ATTEST_VERSION__="${VERSION}"`,
+      "--outfile",
+      outfile,
+    ];
+    // Icona ufficiale del servizio nell'eseguibile Windows: `bun --compile`
+    // supporta --windows-icon SOLO per i target Windows (per gli altri il
+    // flag non si applica). Senza, Windows mostra un'icona generica.
+    if (target.startsWith("bun-windows")) {
+      args.push("--windows-icon", path.join(root, "assets", "sg-attest.ico"));
+    }
+    execFileSync("bun", args, { cwd: root, stdio: ["ignore", "pipe", "pipe"] });
     console.log(existsSync(outfile) ? "ok" : "ok (file assente?!)");
   } catch (err) {
     console.log("FALLITO");
