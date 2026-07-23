@@ -7,10 +7,16 @@ name: Release Binaries
 # Perche' due runner: `bun build --compile --windows-icon` (icona ufficiale
 # nell'.exe) funziona SOLO compilando su Windows — in cross-compile da Linux
 # Bun rifiuta con "Using --windows-icon is only available when compiling on
-# Windows". Quindi i 4 target Unix restano su ubuntu (come nel primo rilascio
-# funzionante, nessuna regressione) e i 2 target Windows vanno su windows-latest,
-# dove l'icona si incorpora. Un job finale unisce gli artefatti, genera i
-# checksum su tutti e sei e pubblica.
+# Windows". Ma il target windows-arm64 NON si estrae su un host Windows-x64
+# ("Failed to extract executable ... aarch64"), mentre si compila bene da Linux.
+# Percio':
+#   - build-linux (ubuntu): i 4 target Unix + windows-arm64 (quest'ultimo senza
+#     icona: Bun non la applica in cross-compile — la guardia per-piattaforma
+#     e' in build-binaries.mjs);
+#   - build-windows (windows-latest): il solo windows-x64, CON icona.
+# Un job finale unisce gli artefatti, genera i checksum su tutti e sei e pubblica.
+# Nota: windows-arm64 resta senza icona (piattaforma marginale, esegue comunque
+# l'.exe x64 in emulazione); windows-x64 — la stragrande maggioranza — ce l'ha.
 #
 # Trigger:
 # - push di un tag v*    -> build + pubblica sulla Release del tag
@@ -27,7 +33,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-unix:
+  build-linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,8 +42,12 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Compila i 4 target Unix (linux/macos)
-        run: node scripts/build-binaries.mjs --only=bun-linux-x64,bun-linux-arm64,bun-darwin-x64,bun-darwin-arm64
+      # I 4 target Unix + windows-arm64: quest'ultimo si compila bene da Linux
+      # (a differenza dell'host Windows-x64, dove Bun non estrae l'aarch64),
+      # ma senza icona — la guardia per-piattaforma in build-binaries.mjs non
+      # aggiunge --windows-icon in cross-compile.
+      - name: Compila i target compilabili su Linux (4 Unix + windows-arm64)
+        run: node scripts/build-binaries.mjs --only=bun-linux-x64,bun-linux-arm64,bun-darwin-x64,bun-darwin-arm64,bun-windows-arm64
 
       # La prova che conta davvero (lezione packaged-bins, P39): un binario
       # che esiste sul disco non e' la stessa cosa di un binario che funziona.
@@ -66,10 +76,10 @@ jobs:
             });
           "
 
-      - name: Carica i binari Unix come artefatto intermedio
+      - name: Carica i binari Linux/macOS come artefatto intermedio
         uses: actions/upload-artifact@v4
         with:
-          name: bins-unix
+          name: bins-linux
           path: dist/
           retention-days: 1
 
@@ -82,10 +92,11 @@ jobs:
         with:
           bun-version: latest
 
-      # Su Windows --windows-icon si applica: i due .exe escono con l'icona
+      # Su Windows --windows-icon si applica: l'.exe x64 esce con l'icona
       # ufficiale del servizio (assets/sg-attest.ico), scelta in build-binaries.mjs.
-      - name: Compila i 2 target Windows (con icona)
-        run: node scripts/build-binaries.mjs --only=bun-windows-x64,bun-windows-arm64
+      # Solo x64: windows-arm64 non si estrae su questo host (vedi build-linux).
+      - name: Compila il target Windows x64 (con icona)
+        run: node scripts/build-binaries.mjs --only=bun-windows-x64
 
       # Self-test a runtime del binario nativo del runner (windows-x64): come
       # per il Linux sopra, provare che esegue davvero, non solo che esiste.
@@ -119,15 +130,15 @@ jobs:
           retention-days: 1
 
   release:
-    needs: [build-unix, build-windows]
+    needs: [build-linux, build-windows]
     runs-on: ubuntu-latest
     permissions:
       contents: write # richiesto per creare/aggiornare la Release del tag
     steps:
-      - name: Scarica i binari Unix
+      - name: Scarica i binari Linux/macOS
         uses: actions/download-artifact@v4
         with:
-          name: bins-unix
+          name: bins-linux
           path: dist
 
       - name: Scarica i binari Windows

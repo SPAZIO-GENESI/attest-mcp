@@ -64,11 +64,16 @@ for (const { name, target } of selected) {
     "--outfile",
     outfile,
   ];
-  // Icona ufficiale del servizio nell'eseguibile Windows: `bun --compile`
-  // supporta --windows-icon SOLO per i target Windows (per gli altri il
-  // flag non si applica) e SOLO compilando su Windows. Senza, Windows
-  // mostra un'icona generica.
-  if (target.startsWith("bun-windows")) {
+  // Icona ufficiale del servizio nell'eseguibile Windows. Due vincoli di Bun:
+  //  1) --windows-icon vale solo per i target Windows;
+  //  2) si applica solo COMPILANDO su Windows (in cross-compile da Linux Bun
+  //     rifiuta: "only available when compiling on Windows").
+  // In piu' il target windows-arm64 NON si estrae su un host Windows-x64
+  // ("Failed to extract executable ... aarch64"), mentre si compila bene da
+  // Linux. Quindi in CI: windows-x64 su un runner Windows (con icona),
+  // windows-arm64 su Linux (senza icona). La guardia per-piattaforma qui
+  // sotto fa esattamente questo, senza rami nel workflow.
+  if (target.startsWith("bun-windows") && process.platform === "win32") {
     args.push("--windows-icon", path.join(root, "assets", "sg-attest.ico"));
   }
 
