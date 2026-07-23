@@ -39,32 +39,60 @@ if (selected.length === 0) {
 
 console.log(`sg-attest ${VERSION} — build di ${selected.length} target in ${distDir}\n`);
 
+// Attesa sincrona senza dipendenze (tra un tentativo e l'altro).
+function sleepSync(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+// Bun scarica il runtime del target al primo uso: quel download a volte
+// arriva monco ("Failed to extract executable ... download may be
+// incomplete"), un guasto transitorio che non deve far cadere l'intera
+// release. Ritentiamo qualche volta prima di dichiarare fallito il target.
+const MAX_ATTEMPTS = 3;
+
 const failed = [];
 for (const { name, target } of selected) {
   const outfile = path.join(distDir, name);
   process.stdout.write(`> ${name} (${target})... `);
-  try {
-    const args = [
-      "build",
-      path.join(root, "src", "cli.js"),
-      "--compile",
-      `--target=${target}`,
-      "--define",
-      `__SG_ATTEST_VERSION__="${VERSION}"`,
-      "--outfile",
-      outfile,
-    ];
-    // Icona ufficiale del servizio nell'eseguibile Windows: `bun --compile`
-    // supporta --windows-icon SOLO per i target Windows (per gli altri il
-    // flag non si applica). Senza, Windows mostra un'icona generica.
-    if (target.startsWith("bun-windows")) {
-      args.push("--windows-icon", path.join(root, "assets", "sg-attest.ico"));
+  const args = [
+    "build",
+    path.join(root, "src", "cli.js"),
+    "--compile",
+    `--target=${target}`,
+    "--define",
+    `__SG_ATTEST_VERSION__="${VERSION}"`,
+    "--outfile",
+    outfile,
+  ];
+  // Icona ufficiale del servizio nell'eseguibile Windows: `bun --compile`
+  // supporta --windows-icon SOLO per i target Windows (per gli altri il
+  // flag non si applica) e SOLO compilando su Windows. Senza, Windows
+  // mostra un'icona generica.
+  if (target.startsWith("bun-windows")) {
+    args.push("--windows-icon", path.join(root, "assets", "sg-attest.ico"));
+  }
+
+  let ok = false;
+  let lastErr;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      execFileSync("bun", args, { cwd: root, stdio: ["ignore", "pipe", "pipe"] });
+      ok = true;
+      break;
+    } catch (err) {
+      lastErr = err;
+      if (attempt < MAX_ATTEMPTS) {
+        process.stdout.write(`ritento (${attempt}/${MAX_ATTEMPTS - 1})... `);
+        sleepSync(4000);
+      }
     }
-    execFileSync("bun", args, { cwd: root, stdio: ["ignore", "pipe", "pipe"] });
+  }
+
+  if (ok) {
     console.log(existsSync(outfile) ? "ok" : "ok (file assente?!)");
-  } catch (err) {
+  } else {
     console.log("FALLITO");
-    console.error(err.stderr?.toString() || err.message);
+    console.error(lastErr.stderr?.toString() || lastErr.message);
     failed.push(name);
   }
 }
