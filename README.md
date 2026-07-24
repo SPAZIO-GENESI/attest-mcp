@@ -11,6 +11,9 @@ terminal / CI pipeline.
 **Full privacy**: file bytes never leave your device. The fingerprint (SHA-256) is
 computed locally, streamed from disk — only the hash and optional metadata are sent.
 
+📖 English documentation: [attestazione.spaziogenesi.org/en](https://attestazione.spaziogenesi.org/en/)
+— site, developer docs, and tiers/terms are all available in English.
+
 ## What it does
 
 The attestation service timestamps a file's SHA-256 fingerprint, signs it (HMAC), and
@@ -27,6 +30,27 @@ a Bitcoin anchor — for **free**, with the file's bytes never leaving the
 caller's machine. No account, no upload, no paid notarization chain. If you
 know of another MCP server with the same combination (full certificate +
 free + local hashing), we'd genuinely like to hear about it — open an issue.
+
+## Built for the European legal and regulatory context
+
+Spazio Genesi is an Italian non-profit (ETS – *Ente del Terzo Settore*). The
+attestation service behind this package was designed with the EU regulatory
+environment in mind, not adapted to it afterwards:
+
+- **GDPR-first, privacy by design**: the file itself never reaches our servers —
+  only its SHA-256 fingerprint (and any metadata you choose to declare) is sent.
+- **EU data residency**: certificates and proofs are archived on Cloudflare R2
+  under EU jurisdiction.
+- **Recognized timestamping, no single point of trust**: every certificate carries
+  an RFC 3161 timestamp from an AATL-rooted authority (trusted by Adobe and most
+  PDF readers) *and* an independent Bitcoin anchor via OpenTimestamps.
+- **Honest about eIDAS**: this is **not** (yet) an eIDAS qualified trust service —
+  the signer identity is currently self-signed, and a qualified electronic seal is
+  a planned but unimplemented upgrade. See the
+  [technical whitepaper](https://trust.spaziogenesi.org/whitepaper.html) for the
+  full, unvarnished breakdown of what is and isn't guaranteed.
+
+Full tiers and terms: [attestazione.spaziogenesi.org/en/condizioni](https://attestazione.spaziogenesi.org/en/condizioni/).
 
 ## Install
 

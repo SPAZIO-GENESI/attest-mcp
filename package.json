@@ -3,8 +3,8 @@
   "publishConfig": {
     "access": "public"
   },
-  "version": "0.4.0",
-  "description": "MCP server + CLI for Spazio Genesi's attestation service — attest, verify, and check digital works, full privacy (files never leave the device).",
+  "version": "0.4.1",
+  "description": "MCP server + CLI for Spazio Genesi's digital attestation service — attest, verify and check digital works with full privacy (files never leave your device). EU-based, GDPR-first, EU-hosted data.",
   "mcpName": "io.github.SPAZIO-GENESI/attest-mcp",
   "type": "module",
   "main": "src/index.js",
