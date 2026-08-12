@@ -204,6 +204,43 @@ chmod +x ./sg-attest-linux-x64          # Linux/macOS only
 `npx`/`npm` remain the primary distribution channel (and what `attest-action`
 uses in CI) — the binaries are an additional channel, not a replacement.
 
+### Build provenance (SLSA/in-toto)
+
+The checksum above answers "is this file intact?" — it says nothing about
+*where the bytes came from*. Every release since `v0.4.2` also carries a
+signed [build provenance attestation](https://slsa.dev/provenance/v1)
+(`actions/attest-build-provenance`, job `release` in
+[`release-binaries.yml`](.github/workflows/release-binaries.yml)): cryptographic
+proof that the file was built by this repo's own workflow, from a specific
+commit and tag, not hand-uploaded or swapped afterward.
+
+The GitHub CLI can verify it, but `gh attestation verify` requires an
+**authenticated** `gh` session even on this public repo (confirmed: it fails
+with "please run gh auth login" without one) — a real gap if the point is a
+check anyone can run with zero setup:
+
+```bash
+gh attestation verify sg-attest-linux-x64 --repo SPAZIO-GENESI/attest-mcp
+```
+
+[`scripts/verify-provenance.mjs`](scripts/verify-provenance.mjs) does the same
+verification **with no GitHub credentials at all** — only the public
+attestations REST endpoint (confirmed reachable unauthenticated, even on this
+public repo) and the [`sigstore`](https://www.npmjs.com/package/sigstore)
+library, which checks the signature against Sigstore's own public
+infrastructure (Rekor, Fulcio, TUF — no account needed there either):
+
+```bash
+git clone https://github.com/SPAZIO-GENESI/attest-mcp
+cd attest-mcp && npm install
+node scripts/verify-provenance.mjs ./sg-attest-linux-x64 \
+  --repo SPAZIO-GENESI/attest-mcp --tag v0.4.2
+```
+
+Exits `0` on success, `1` if the file doesn't match anything the workflow
+actually built (e.g. a single altered byte makes the digest — and therefore
+the lookup key itself — no longer match any attestation).
+
 ## Configuration
 
 | Env var | Default | Purpose |
