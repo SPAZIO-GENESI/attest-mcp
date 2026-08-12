@@ -16,7 +16,8 @@
   "scripts": {
     "start": "node src/index.js",
     "test": "node --test test/hash.test.js test/cli.test.js",
-    "build:binaries": "node scripts/build-binaries.mjs"
+    "build:binaries": "node scripts/build-binaries.mjs",
+    "verify:provenance": "node scripts/verify-provenance.mjs"
   },
   "keywords": [
     "mcp",
@@ -41,5 +42,8 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "sigstore": "^5.0.0"
   }
 }
