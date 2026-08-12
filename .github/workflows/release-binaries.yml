@@ -133,7 +133,9 @@ jobs:
     needs: [build-linux, build-windows]
     runs-on: ubuntu-latest
     permissions:
-      contents: write # richiesto per creare/aggiornare la Release del tag
+      contents: write     # richiesto per creare/aggiornare la Release del tag
+      id-token: write      # OIDC per la firma dell'attestazione di provenienza (A1)
+      attestations: write  # scrittura dell'attestazione di build provenance (A1)
     steps:
       - name: Scarica i binari Linux/macOS
         uses: actions/download-artifact@v4
@@ -146,6 +148,14 @@ jobs:
         with:
           name: bins-windows
           path: dist
+
+      # Attesta i sei binari esatti che verranno pubblicati, PRIMA di generare
+      # SHA256SUMS.txt: cosi' il glob dist/* non include mai il checksum file
+      # (e' un derivato, attestarlo non aggiungerebbe nulla — vedi A1-DESIGN).
+      - name: Attesta la provenienza dei binari
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: 'dist/*'
 
       - name: Genera i checksum SHA-256 (su tutti e sei)
         working-directory: dist
