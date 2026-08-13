@@ -138,13 +138,13 @@ jobs:
       attestations: write  # scrittura dell'attestazione di build provenance (A1)
     steps:
       - name: Scarica i binari Linux/macOS
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: bins-linux
           path: dist
 
       - name: Scarica i binari Windows
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: bins-windows
           path: dist
