@@ -24,7 +24,7 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       # La versione in server.json deve combaciare con quella gia' pubblicata
       # su npm, altrimenti il registro rifiuta la scheda in fase di verifica.
