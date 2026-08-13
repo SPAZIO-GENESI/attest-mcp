@@ -171,7 +171,7 @@ jobs:
 
       - name: Pubblica sulla GitHub Release del tag
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: dist/*
           draft: false # senza, softprops/action-gh-release crea una bozza non pubblica (scoperto al primo tag reale, v0.4.0)
