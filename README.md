@@ -299,6 +299,16 @@ Report vulnerabilities → [`/sicurezza/`](https://attestazione.spaziogenesi.org
 repo has no `security.txt` of its own (npm package, no static assets), but
 the policy covers the whole project.
 
+## Contributing
+
+Bug reports and feature requests: [open an issue](https://github.com/SPAZIO-GENESI/attest-mcp/issues).
+Pull requests are welcome — keep them focused (one change per PR), make sure
+`npm test` passes, and explain the "why" in the description, not just the
+"what". For anything that touches the attestation contract itself (hashing,
+HMAC verification, the API surface), open an issue first: this client mirrors
+a contract owned by [imgauth](https://github.com/SPAZIO-GENESI/imgauth), so
+changes need to stay compatible with it.
+
 ## License
 
 MIT — see [LICENSE](LICENSE). This is a client for the attestation service; the
