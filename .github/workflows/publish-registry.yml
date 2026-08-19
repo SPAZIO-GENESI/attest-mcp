@@ -16,6 +16,9 @@ on:
   push:
     tags: ["v*"] # e a ogni tag di release
 
+permissions:
+  contents: read
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -24,7 +27,7 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # La versione in server.json deve combaciare con quella gia' pubblicata
       # su npm, altrimenti il registro rifiuta la scheda in fase di verifica.

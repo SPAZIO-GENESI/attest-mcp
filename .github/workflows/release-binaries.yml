@@ -26,19 +26,28 @@ name: Release Binaries
 #
 # Coesiste con publish-registry.yml (scatta anch'esso su v*): workflow
 # indipendenti sullo stesso tag, nessun conflitto.
+#
+# upload/download-artifact tenuti sulla stessa generazione (v7/v8, entrambi
+# post digest-check): v8 di download-artifact impone la verifica dell'hash
+# di default, che un upload-artifact troppo vecchio (v4) potrebbe non
+# soddisfare. Collaudato con un self-test (workflow_dispatch) prima di
+# aprire la PR — P54/F6.
 
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build-linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: latest
 
@@ -77,7 +86,7 @@ jobs:
           "
 
       - name: Carica i binari Linux/macOS come artefatto intermedio
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: bins-linux
           path: dist/
@@ -86,9 +95,9 @@ jobs:
   build-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: oven-sh/setup-bun@v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: latest
 
@@ -123,7 +132,7 @@ jobs:
           "
 
       - name: Carica i binari Windows come artefatto intermedio
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: bins-windows
           path: dist/
@@ -138,13 +147,13 @@ jobs:
       attestations: write  # scrittura dell'attestazione di build provenance (A1)
     steps:
       - name: Scarica i binari Linux/macOS
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: bins-linux
           path: dist
 
       - name: Scarica i binari Windows
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: bins-windows
           path: dist
@@ -153,7 +162,7 @@ jobs:
       # SHA256SUMS.txt: cosi' il glob dist/* non include mai il checksum file
       # (e' un derivato, attestarlo non aggiungerebbe nulla — vedi A1-DESIGN).
       - name: Attesta la provenienza dei binari
-        uses: actions/attest-build-provenance@v4
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
           subject-path: 'dist/*'
 
@@ -163,7 +172,7 @@ jobs:
 
       - name: Carica come artefatti CI (self-test via workflow_dispatch)
         if: github.event_name == 'workflow_dispatch'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: sg-attest-binaries
           path: dist/
@@ -171,7 +180,7 @@ jobs:
 
       - name: Pubblica sulla GitHub Release del tag
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3
         with:
           files: dist/*
           draft: false # senza, softprops/action-gh-release crea una bozza non pubblica (scoperto al primo tag reale, v0.4.0)
