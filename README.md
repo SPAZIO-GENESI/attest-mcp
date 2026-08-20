@@ -304,7 +304,9 @@ the policy covers the whole project.
 Bug reports and feature requests: [open an issue](https://github.com/SPAZIO-GENESI/attest-mcp/issues).
 Pull requests are welcome — keep them focused (one change per PR), make sure
 `npm test` passes, and explain the "why" in the description, not just the
-"what". For anything that touches the attestation contract itself (hashing,
+"what". **Test policy**: any PR that adds new functionality should add a test
+for it under `test/`; `npm run lint` and `npm test` both run in CI on every
+push and pull request. For anything that touches the attestation contract itself (hashing,
 HMAC verification, the API surface), open an issue first: this client mirrors
 a contract owned by [imgauth](https://github.com/SPAZIO-GENESI/imgauth), so
 changes need to stay compatible with it.

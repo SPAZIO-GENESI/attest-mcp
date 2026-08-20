@@ -17,6 +17,7 @@ jobs:
         with:
           node-version: "20"
       - run: npm install --no-audit --no-fund
+      - run: npm run lint
       - run: npm test
 
   # The test that 0.3.0 was missing. Unit tests import the modules directly,

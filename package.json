@@ -16,6 +16,7 @@
   "scripts": {
     "start": "node src/index.js",
     "test": "node --test test/hash.test.js test/cli.test.js",
+    "lint": "eslint src/ scripts/ test/",
     "build:binaries": "node scripts/build-binaries.mjs",
     "verify:provenance": "node scripts/verify-provenance.mjs"
   },
@@ -44,6 +45,8 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.8.1",
     "sigstore": "^5.0.0"
   }
 }
