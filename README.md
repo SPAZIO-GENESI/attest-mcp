@@ -1,5 +1,7 @@
 # attest-mcp
 
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/14159/badge)](https://www.bestpractices.dev/projects/14159)
+
 Listed on the [official MCP Registry](https://registry.modelcontextprotocol.io/) as
 `io.github.SPAZIO-GENESI/attest-mcp`.
 
